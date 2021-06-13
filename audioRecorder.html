@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Audio Recorder</title>
+
+        <style>
+            button, a
+            {
+                margin: 2%;
+                background-color: #014985;
+                border: none;
+                color: white;
+                padding: 10% 15%;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 16px;
+            }
+
+            #audio-player
+            {
+                margin-left: auto;
+                margin-right: auto;
+                width: 8rem;
+            }
+        </style>
+
+    </head>
+    <body>
+
+        <div id="audio-player">
+            <button id="start-record">Start Recording</button>
+            <button style="display: none;" id="end-record">End Recording</button>
+            <a style="display: none;" id="download">Download</a>
+            <br>
+            <audio id="recorded-audio"></audio>
+        </div>
+
+        <script>
+            var recording = false;
+            var hasRecorded = false;
+            const downloadLink = document.getElementById('download');
+            const startBtn = document.getElementById('start-record');
+            const endBtn = document.getElementById('end-record');
+            const audioPlayer = document.getElementById('recorded-audio');
+
+            const startRecording = (stream) =>
+            {
+                const options = { mimeType: 'audio/webm' };
+                const recordedData = [];
+                const mediaRecorder = new MediaRecorder(stream, options);
+                startBtn.style = "display: none;";
+                endBtn.style = "display: block;";
+
+                endBtn.addEventListener('click', () =>
+                {
+                    mediaRecorder.stop();
+                    stream.getTracks()
+                        .forEach( track => track.stop() );
+                    startBtn.style = "display: block;";
+                    endBtn.style = "display: none;";
+                })
+
+                mediaRecorder.addEventListener('dataavailable',
+                    (event) =>
+                    {
+                        if (event.data.size > 0) recordedData.push(event.data);
+                    });
+
+                mediaRecorder.addEventListener('stop', () =>
+                {
+                    const blob = new Blob(recordedData, { 'type' : 'audio/ogg; codecs=opus' } );
+                    const link = URL.createObjectURL(blob);
+
+                    audioPlayer.src = link;
+                    audioPlayer.controls=true;
+
+                    downloadLink.href = link;
+                    downloadLink.download = 'test.ogg';
+                    downloadLink.style = "display: block;";
+                });
+
+                mediaRecorder.start();
+            };
+
+            startBtn.addEventListener('click', () =>
+            {
+                navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                    .then(startRecording);
+            });
+        </script>
+
+    </body>
+
+</html>
