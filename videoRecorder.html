@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Video Recorder</title>
+
+        <style>
+            button
+            {
+                margin: 10px auto;
+                background: #036103;
+                border: 0;
+                color: #fff;
+                padding: 6px 20px;
+                display: inline-block;
+            }
+
+            button:disabled
+            {
+                background-color: #ddd;
+            }
+
+            h6
+            {
+                font-size: larger;
+                font-weight: 500;
+            }
+
+            li
+            {
+                display: inline-block;
+            }
+
+            video
+            {
+                margin-top: 5%;
+                width: 100%;
+                height: auto;
+            }
+        </style>
+
+    </head>
+
+    <body>
+
+        <div>
+            <button id='request'> Permit Camera Access </button>
+            <button id='start'> Start Recording </button>
+            <button id='stop'> Stop Recording </button>
+
+            <ul id='downloads-list'>
+                <h6>Downloads List:</h6>
+                <!--li tags will be added below-->
+            </ul>
+        </div>
+        
+        <video id='play-video-stream' autoplay></video>
+
+        <script>
+            const playVideoStream = document.getElementById('play-video-stream');
+            const reqBtn = document.getElementById('request');
+            const startBtn = document.getElementById('start');
+            const stopBtn = document.getElementById('stop');
+            const downloadsList = document.getElementById('downloads-list');
+
+            var stream, recorder;
+
+            const requestVideo = () =>
+                {
+                    navigator.mediaDevices.getUserMedia(
+                        {
+                            video: true,
+                            audio: true
+                        })
+                        .then(stream =>
+                        {
+                            reqBtn.style.display = 'none';
+                            startBtn.removeAttribute('disabled');
+                            playVideoStream.src = URL.createObjectURL(stream);
+                        })
+                        .catch(err => alert(err));
+                }
+
+            const startRecording = () =>
+                {
+                    recorder = new MediaRecorder(stream, { mimeType: 'video/mp4' });
+                    recorder.start();
+                    stopBtn.removeAttribute('disabled');
+                    startBtn.disabled = true;
+                }
+
+
+            const stopRecording = () =>
+                {
+                    recorder.ondataavailable = (event) =>
+                        {
+                            const newVideo = document.createElement('a');
+                            newVideo.download = ['video_', (new Date() + '').slice(4, 28), '.webm'].join('');
+                            newVideo.href = URL.createObjectURL(event.data);
+                            newVideo.textContent = newVideo.download;
+
+                            const newListElement = document.createElement('li');
+                            newListElement.appendChild(newVideo);
+                            downloadsList.appendChild(newListElement);
+                            downloadsList.style.display = 'block';
+                        };
+                    recorder.stop();
+                    startBtn.removeAttribute('disabled');
+                    stopBtn.disabled = true;
+                }
+
+            (() =>
+            {
+                reqBtn.onclick = requestVideo;
+
+                startBtn.onclick = startRecording;
+                startBtn.disabled = true;
+
+                stopBtn.onclick = stopRecording;
+                stopBtn.disabled = true;
+
+                downloadsList.style.display = 'none';
+            })();
+        </script>
+
+    </body>
+</html>
